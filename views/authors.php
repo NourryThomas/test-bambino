@@ -63,30 +63,35 @@ $authors = $authorsData['items'];
         </tr>
         </thead>
         <tbody>
-        <?php foreach ($authors as $author): ?>
-            <tr>
-                <td><?php echo htmlspecialchars($author['id']); ?></td>
-                <td><?php echo htmlspecialchars($author['first_name']); ?></td>
-                <td><?php echo htmlspecialchars($author['last_name']); ?></td>
-                <td><?php echo htmlspecialchars($author['birthday']); ?></td>
-                <td><?php echo htmlspecialchars($author['place_of_birth']); ?></td>
-                <td><?php echo htmlspecialchars($author['gender']); ?></td>
-                <td>
-                    <!-- Button to view author details -->
-                    <a href="?page=view_author&id=<?php echo $author['id']; ?>" class="btn btn-info btn-sm">
-                        <i class="bi bi-eye"></i> View
-                    </a>
+            <?php foreach ($authors as $author):
+                $date = new DateTime(htmlspecialchars($author['birthday']));
+                $author_birthday = $date->format('m/d/Y');
+            ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($author['id']); ?></td>
+                    <td><?php echo htmlspecialchars($author['first_name']); ?></td>
+                    <td><?php echo htmlspecialchars($author['last_name']); ?></td>
+                    <td><?php echo $author_birthday ?></td>
+                    <td><?php echo htmlspecialchars($author['place_of_birth']); ?></td>
+                    <td><?php echo htmlspecialchars($author['gender']); ?></td>
+                    <td>
+                        <!-- Button to view author details -->
 
-                    <!-- Form to delete an author -->
-                    <form action="?page=delete_author" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this author?');">
-                        <input type="hidden" name="author_id" value="<?php echo $author['id']; ?>">
-                        <button type="submit" class="btn btn-danger btn-sm">
-                            <i class="bi bi-trash"></i> Delete
-                        </button>
-                    </form>
-                </td>
-            </tr>
-        <?php endforeach; ?>
+                        <a href="?page=view_author&id=<?php echo $author['id']; ?>" class="btn btn-info btn-sm">
+                            <i class="bi bi-eye"></i> View
+
+                        </a>
+
+                        <!-- Form to delete an author -->
+                        <form action="?page=delete_author" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this author?');">
+                            <input type="hidden" name="author_id" value="<?php echo $author['id']; ?>">
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
         </tbody>
     </table>
 </div>

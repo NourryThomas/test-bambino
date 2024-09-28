@@ -40,6 +40,8 @@ function fetchAuthorData($authorId, $token) {
 
 // Call the API to fetch the author's information
 $author = fetchAuthorData($authorId, $_SESSION['token']);
+$date = new DateTime(htmlspecialchars($author['birthday']));
+$birthday = $date->format('m/d/Y');
 
 // Check if books are available
 $books = isset($author['books']) ? $author['books'] : [];
@@ -80,7 +82,7 @@ $errorMessage = isset($_GET['error']) ? htmlspecialchars($_GET['error']) : '';
                     <h5 class="card-title">Author Information</h5>
                     <p><strong>First Name:</strong> <?php echo htmlspecialchars($author['first_name']); ?></p>
                     <p><strong>Last Name:</strong> <?php echo htmlspecialchars($author['last_name']); ?></p>
-                    <p><strong>Date of Birth:</strong> <?php echo htmlspecialchars($author['birthday']); ?></p>
+                    <p><strong>Date of Birth:</strong> <?php echo $birthday ?></p>
                     <p><strong>Biography:</strong> <?php echo htmlspecialchars($author['biography']); ?></p>
                     <p><strong>Gender:</strong> <?php echo htmlspecialchars($author['gender']); ?></p>
                     <p><strong>Place of Birth:</strong> <?php echo htmlspecialchars($author['place_of_birth']); ?></p>
