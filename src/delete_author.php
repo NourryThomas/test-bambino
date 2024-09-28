@@ -5,7 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Function to check if the author has any books
 function authorHasBooks($authorId, $token) {
-    $apiUrl = 'https://candidate-testing.com/api/v2/authors/' . $authorId . '/books'; // Adjust the endpoint as necessary
+    $apiUrl = 'https://candidate-testing.com/api/v2/authors/' . $authorId; // Adjust the endpoint as necessary
     $ch = curl_init($apiUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -18,18 +18,36 @@ function authorHasBooks($authorId, $token) {
     curl_close($ch);
 
     if ($httpCode !== 200) {
-        return false; // Return false if the API call failed
+        return [
+            'hasBooks' => false,
+            'error' => "Failed to fetch the author data. HTTP Code: $httpCode"
+        ];
     }
 
-    $books = json_decode($response, true);
-    return !empty($books['items']); // Return true if there are books, false if the list is empty
+    $authorData = json_decode($response, true);
+
+    // Check if the author has any books in the "books" key
+    if (!empty($authorData['books'])) {
+        return [
+            'hasBooks' => true,
+            'error' => "Cannot delete the author because he have associated books."
+        ];
+    }
+
+    return [
+        'hasBooks' => false,
+        'error' => null // No error
+    ];
 }
 
 // Function to delete an author
 function deleteAuthor($authorId, $token) {
     // First, check if the author has any books
-    if (authorHasBooks($authorId, $token)) {
-        return "Cannot delete the author. They have associated books.";
+    $bookCheck = authorHasBooks($authorId, $token);
+
+    // If the author has books, return the error message
+    if ($bookCheck['hasBooks']) {
+        return $bookCheck['error'];
     }
 
     // If no books are associated, proceed with deletion
@@ -49,7 +67,6 @@ function deleteAuthor($authorId, $token) {
     if ($httpCode === 204) {
         return "Author successfully deleted.";
     } else {
-        return "Error deleting the author. HTTP Code: " . $httpCode;
+        return "Error deleting the author. HTTP Code: " . $httpCode ;
     }
 }
-
