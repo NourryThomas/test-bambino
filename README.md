@@ -16,7 +16,8 @@ php -S localhost:8000
 
 Informations : 
 
-Impossible to delete books, admin privilege required.
+Impossible to delete books, admin privilege required in API.
+Impossible to delete authors, admin privilege required in API.
 
 How to :
 
@@ -32,4 +33,4 @@ How to enable cURL :
 How to enable ssl : 
  - download cacert.pem : https://curl.se/ca/cacert.pem
  - move to {your-path-to-php}/extras/ssl
- - In php.ini, add curl.cainfo and openssl.cafile with the path to cacert.pem
+ - In php.ini, uncomment curl.cainfo and openssl.cafil (remove ;) and add the path to cacert.pem
