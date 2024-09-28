@@ -3,6 +3,12 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Check if the user is authenticated
+if (!isset($_SESSION['token'])) {
+    header('Location: /index.php');
+    exit();
+}
+
 // Function to check if the author has any books
 function authorHasBooks($authorId, $token) {
     $apiUrl = 'https://candidate-testing.com/api/v2/authors/' . $authorId; // Adjust the endpoint as necessary

@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Check if the user is authenticated
 if (!isset($_SESSION['token'])) {
-    header('Location: /views/login.php');
+    header('Location: /index.php');
     exit();
 }
 

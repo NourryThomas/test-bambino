@@ -3,6 +3,12 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Check if the user is authenticated
+if (!isset($_SESSION['token'])) {
+    header('Location: /index.php');
+    exit();
+}
+
 // Function to delete a book
 function deleteBook($bookId, $token) {
     $apiUrl = 'https://candidate-testing.com/api/v2/books/' . $bookId;
