@@ -1,5 +1,8 @@
 <?php
-session_start();
+// Démarrer la session si elle n'est pas déjà démarrée
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = $_POST['email'];
@@ -24,21 +27,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     curl_close($ch);
 
     if ($response === false) {
-        die('Erreur de connexion à l\'API : ' . curl_error($ch));
+        // Afficher l'erreur cURL
+        $error = 'Erreur de connexion à l\'API : ' . curl_error($ch);
+        header('Location: /views/login.php?error=' . urlencode($error));
+        exit();
     }
 
     $responseData = json_decode($response, true);
 
     if ($httpCode === 200 && isset($responseData['token_key'])) {
-        $_SESSION['token_key'] = $responseData['token_key'];
-        header('Location: /views/authors.php');
+        // Connexion réussie, stocker le token dans la session
+        session_regenerate_id(true); // Sécurise la session en générant un nouvel ID de session
+        $_SESSION['token'] = $responseData['token_key'];
+        header('Location: /views/dashboard.php'); // Redirection vers le tableau de bord
         exit();
     } elseif ($httpCode === 403) {
+        // Identifiants incorrects
         $error = "Identifiants incorrects. Veuillez réessayer.";
     } else {
+        // Gestion d'autres erreurs
         $error = "Erreur de connexion. Code HTTP : " . $httpCode;
     }
 
+    // Redirection vers la page de connexion avec un message d'erreur
     header('Location: /views/login.php?error=' . urlencode($error));
     exit();
 }
