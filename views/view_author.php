@@ -1,20 +1,23 @@
 <?php
-session_start();
+// Check if the session has not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-// Vérifier si l'utilisateur est authentifié
+// Check if the user is authenticated
 if (!isset($_SESSION['token'])) {
     header('Location: /views/login.php');
     exit();
 }
 
-// Vérifier si l'ID de l'auteur est passé via GET
+// Check if the author ID is passed via GET
 if (!isset($_GET['id'])) {
-    die("Aucun auteur spécifié.");
+    die("No author specified.");
 }
 
 $authorId = $_GET['id'];
 
-// Fonction pour récupérer les informations de l'auteur
+// Function to fetch the author's information
 function fetchAuthorData($authorId, $token) {
     $apiUrl = 'https://candidate-testing.com/api/v2/authors/' . $authorId;
     $ch = curl_init($apiUrl);
@@ -29,29 +32,29 @@ function fetchAuthorData($authorId, $token) {
     curl_close($ch);
 
     if ($httpCode !== 200) {
-        die('Erreur lors de la récupération des informations de l\'auteur. Code HTTP : ' . $httpCode);
+        die('Error fetching author information. HTTP Code: ' . $httpCode);
     }
 
     return json_decode($response, true);
 }
 
-// Appel à l'API pour récupérer les informations de l'auteur
+// Call the API to fetch the author's information
 $author = fetchAuthorData($authorId, $_SESSION['token']);
 
-// Vérifier si des livres sont disponibles
+// Check if books are available
 $books = isset($author['books']) ? $author['books'] : [];
 
-// Gestion des messages de succès ou d'erreur
+// Handle success or error messages
 $successMessage = isset($_GET['success']) ? htmlspecialchars($_GET['success']) : '';
 $errorMessage = isset($_GET['error']) ? htmlspecialchars($_GET['error']) : '';
 ?>
 
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Détails de l'Auteur</title>
+    <title>Author Details</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -60,7 +63,7 @@ $errorMessage = isset($_GET['error']) ? htmlspecialchars($_GET['error']) : '';
 <body>
 
 <div class="container mt-5">
-    <!-- Affichage des messages de succès ou d'erreur -->
+    <!-- Display success or error messages -->
     <?php if ($successMessage): ?>
         <div class="alert alert-success"><?php echo $successMessage; ?></div>
     <?php endif; ?>
@@ -70,43 +73,41 @@ $errorMessage = isset($_GET['error']) ? htmlspecialchars($_GET['error']) : '';
     <?php endif; ?>
 
     <div class="row">
-        <!-- Carte des informations de l'auteur -->
+        <!-- Author's information card -->
         <div class="col-md-6 mb-4">
             <div class="card shadow">
                 <div class="card-body">
-                    <h5 class="card-title">Informations de l'Auteur</h5>
-                    <p><strong>Prénom :</strong> <?php echo htmlspecialchars($author['first_name']); ?></p>
-                    <p><strong>Nom :</strong> <?php echo htmlspecialchars($author['last_name']); ?></p>
-                    <p><strong>Date de naissance :</strong> <?php echo htmlspecialchars($author['birthday']); ?></p>
-                    <p><strong>Biographie :</strong> <?php echo htmlspecialchars($author['biography']); ?></p>
-                    <p><strong>Sexe :</strong> <?php echo htmlspecialchars($author['gender']); ?></p>
-                    <p><strong>Lieu de naissance :</strong> <?php echo htmlspecialchars($author['place_of_birth']); ?></p>
+                    <h5 class="card-title">Author Information</h5>
+                    <p><strong>First Name:</strong> <?php echo htmlspecialchars($author['first_name']); ?></p>
+                    <p><strong>Last Name:</strong> <?php echo htmlspecialchars($author['last_name']); ?></p>
+                    <p><strong>Date of Birth:</strong> <?php echo htmlspecialchars($author['birthday']); ?></p>
+                    <p><strong>Biography:</strong> <?php echo htmlspecialchars($author['biography']); ?></p>
+                    <p><strong>Gender:</strong> <?php echo htmlspecialchars($author['gender']); ?></p>
+                    <p><strong>Place of Birth:</strong> <?php echo htmlspecialchars($author['place_of_birth']); ?></p>
                 </div>
             </div>
         </div>
 
-        <!-- Carte des livres associés à l'auteur -->
+        <!-- Author's associated books card -->
         <div class="col-md-6 mb-4">
             <div class="card shadow">
                 <div class="card-body">
-                    <h5 class="card-title">Livres de l'Auteur</h5>
+                    <h5 class="card-title">Books by the Author</h5>
                     <?php if (!empty($books)): ?>
                         <ul class="list-group list-group-flush">
                             <?php foreach ($books as $book): ?>
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <?php echo htmlspecialchars($book['title']); ?>
-                                    <form action="/src/delete_book.php" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce livre ?');">
+                                    <form action="?page=delete_book" method="POST" onsubmit="return confirm('Are you sure you want to delete this book?');">
                                         <input type="hidden" name="book_id" value="<?php echo $book['id']; ?>">
                                         <input type="hidden" name="author_id" value="<?php echo $authorId; ?>">
-                                        <button type="submit" class="btn btn-danger btn-sm">
-                                            <i class="bi bi-trash"></i> Supprimer
-                                        </button>
+                                        <button type="submit" class="btn btn-danger">Delete</button>
                                     </form>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
                     <?php else: ?>
-                        <p>Aucun livre associé à cet auteur.</p>
+                        <p>No books associated with this author.</p>
                     <?php endif; ?>
                 </div>
             </div>

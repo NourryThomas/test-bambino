@@ -1,101 +1,101 @@
 <?php
 
 if (php_sapi_name() !== 'cli') {
-    die("Ce script doit être exécuté en ligne de commande.");
+    die("This script must be run from the command line.");
 }
 
-// Récupérer le token depuis les arguments de la ligne de commande
+// Retrieve the token from the command-line arguments
 $options = getopt("", ["token:"]);
 $token = $options['token'] ?? null;
 
 if (!$token) {
-    die("Le token d'authentification est requis. Utilisation : php add_author.php --token=TON_TOKEN\n");
+    die("Authentication token is required. Usage: php add_author.php --token=YOUR_TOKEN\n");
 }
 
-// Fonction pour valider un format de date (YYYY-MM-DD) et vérifier si elle est antérieure à aujourd'hui
+// Function to validate a date format (YYYY-MM-DD) and check if it is before today
 function validateDate($date, $format = 'Y-m-d') {
     $d = DateTime::createFromFormat($format, $date);
-    $now = new DateTime(); // Date actuelle
+    $now = new DateTime(); // Current date
 
-    // Vérifier que la date est valide et qu'elle est antérieure à aujourd'hui
+    // Check that the date is valid and that it is before today
     return $d && $d->format($format) === $date && $d < $now;
 }
 
-// Fonction pour valider un nom (seules les lettres et les espaces sont acceptés)
+// Function to validate a name (only letters and spaces are allowed)
 function validateName($name) {
     return preg_match("/^[a-zA-Z\s]+$/", $name);
 }
 
-// Fonction pour valider le sexe (male/female)
+// Function to validate gender (male/female)
 function validateGender($gender) {
     return in_array(strtolower($gender), ['male', 'female']);
 }
 
-// Saisie avec validation du prénom
+// Input with validation for the first name
 do {
-    echo "Entrez le prénom de l'auteur : ";
+    echo "Enter the author's first name: ";
     $firstName = trim(fgets(STDIN));
 
     if (!validateName($firstName)) {
-        echo "Le prénom n'est pas valide. Il ne doit contenir que des lettres et des espaces.\n";
+        echo "The first name is not valid. It should only contain letters and spaces.\n";
     }
 } while (!validateName($firstName));
 
-// Saisie avec validation du nom
+// Input with validation for the last name
 do {
-    echo "Entrez le nom de l'auteur : ";
+    echo "Enter the author's last name: ";
     $lastName = trim(fgets(STDIN));
 
     if (!validateName($lastName)) {
-        echo "Le nom n'est pas valide. Il ne doit contenir que des lettres et des espaces.\n";
+        echo "The last name is not valid. It should only contain letters and spaces.\n";
     }
 } while (!validateName($lastName));
 
-// Saisie avec validation de la date de naissance
+// Input with validation for the birthdate
 do {
-    echo "Entrez la date de naissance (format : YYYY-MM-DD) : ";
+    echo "Enter the birthdate (format: YYYY-MM-DD): ";
     $birthday = trim(fgets(STDIN));
 
     if (!validateDate($birthday)) {
-        echo "La date de naissance n'est pas valide. Elle doit être au format YYYY-MM-DD et antérieure à aujourd'hui.\n";
+        echo "The birthdate is not valid. It must be in the format YYYY-MM-DD and before today.\n";
     }
 } while (!validateDate($birthday));
 
-// Saisie de la biographie (facultative, sans validation stricte)
-echo "Entrez la biographie de l'auteur (facultative) : ";
+// Input for the biography (optional, no strict validation)
+echo "Enter the author's biography (optional): ";
 $biography = trim(fgets(STDIN));
 
-// Saisie avec validation du sexe
+// Input with validation for gender
 do {
-    echo "Entrez le sexe de l'auteur (male/female) : ";
+    echo "Enter the author's gender (male/female): ";
     $gender = trim(fgets(STDIN));
 
     if (!validateGender($gender)) {
-        echo "Le sexe n'est pas valide. Seules les valeurs 'male' ou 'female' sont acceptées.\n";
+        echo "The gender is not valid. Only 'male' or 'female' are accepted.\n";
     }
 } while (!validateGender($gender));
 
-// Saisie avec validation du lieu de naissance
+// Input with validation for place of birth
 do {
-    echo "Entrez le lieu de naissance : ";
+    echo "Enter the place of birth: ";
     $placeOfBirth = trim(fgets(STDIN));
 
     if (empty($placeOfBirth)) {
-        echo "Le lieu de naissance est obligatoire.\n";
+        echo "Place of birth is required.\n";
     }
 } while (empty($placeOfBirth));
 
-// Préparer les données pour l'API
+// Prepare the data for the API
 $data = [
     'first_name' => $firstName,
     'last_name' => $lastName,
-    'birthday' => $birthday . 'T00:00:00.000Z', // Formater la date pour inclure l'heure
+    'birthday' => $birthday . 'T00:00:00.000Z', // Format the date to include time
     'biography' => $biography,
-    'gender' => strtolower($gender), // Convertir en minuscules pour être cohérent avec l'API
+    'gender' => strtolower($gender), // Convert to lowercase for consistency with the API
     'place_of_birth' => $placeOfBirth,
 ];
 
-// Appel à l'API pour ajouter l'auteur
+// Call the API to add the author
 $apiUrl = 'https://candidate-testing.com/api/v2/authors';
 $ch = curl_init($apiUrl);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -111,8 +111,8 @@ $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
 if ($httpCode === 201) {
-    echo "Auteur ajouté avec succès.\n";
+    echo "Author successfully added.\n";
 } else {
-    echo "Erreur lors de l'ajout de l'auteur. Code HTTP : " . $httpCode . "\n";
-    echo "Réponse de l'API : " . $response . "\n";
+    echo "Error adding the author. HTTP Code: " . $httpCode . "\n";
+    echo "API Response: " . $response . "\n";
 }

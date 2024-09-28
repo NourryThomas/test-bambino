@@ -1,52 +1,44 @@
 <?php
-session_start();
-
-// Vérifier si l'utilisateur est authentifié
-if (!isset($_SESSION['token'])) {
-    header('Location: /views/login.php');
-    exit();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 
-// Vérifier si l'ID de l'auteur est passé via POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['author_id'])) {
-    $authorId = $_POST['author_id'];
+// Function to check if the author has any books
+function authorHasBooks($authorId, $token) {
+    $apiUrl = 'https://candidate-testing.com/api/v2/authors/' . $authorId . '/books'; // Adjust the endpoint as necessary
+    $ch = curl_init($apiUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Authorization: Bearer ' . $token,
+        'Content-Type: application/json'
+    ]);
 
-    // Fonction pour vérifier si l'auteur a des livres associés
-    function hasBooks($authorId, $token) {
-        $apiUrl = 'https://candidate-testing.com/api/v2/books?author_id=' . $authorId;
-        $ch = curl_init($apiUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Authorization: Bearer ' . $token,
-            'Content-Type: application/json'
-        ]);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
 
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        if ($httpCode === 200) {
-            $booksData = json_decode($response, true);
-            return !empty($booksData['items']); // Retourne true si des livres sont associés
-        } else {
-            return false; // En cas d'erreur de requête ou autre, considérer qu'il n'y a pas de livres
-        }
+    if ($httpCode !== 200) {
+        return false; // Return false if the API call failed
     }
 
-    // Vérifier si l'auteur a des livres associés
-    if (hasBooks($authorId, $_SESSION['token'])) {
-        // Si l'auteur a des livres, redirection avec un message d'erreur
-        header('Location: /views/authors.php?error=Cet auteur a des livres associés et ne peut pas être supprimé.');
-        exit();
+    $books = json_decode($response, true);
+    return !empty($books['items']); // Return true if there are books, false if the list is empty
+}
+
+// Function to delete an author
+function deleteAuthor($authorId, $token) {
+    // First, check if the author has any books
+    if (authorHasBooks($authorId, $token)) {
+        return "Cannot delete the author. They have associated books.";
     }
 
-    // Appel à l'API pour supprimer l'auteur
+    // If no books are associated, proceed with deletion
     $apiUrl = 'https://candidate-testing.com/api/v2/authors/' . $authorId;
     $ch = curl_init($apiUrl);
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Authorization: Bearer ' . $_SESSION['token'], 
+        'Authorization: Bearer ' . $token,
         'Content-Type: application/json'
     ]);
 
@@ -55,16 +47,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['author_id'])) {
     curl_close($ch);
 
     if ($httpCode === 204) {
-        // Auteur supprimé avec succès
-        header('Location: /views/authors.php?success=Auteur supprimé avec succès.');
-        exit();
+        return "Author successfully deleted.";
     } else {
-        // Gestion des erreurs
-        header('Location: /views/authors.php?error=Erreur lors de la suppression de l\'auteur.');
-        exit();
+        return "Error deleting the author. HTTP Code: " . $httpCode;
     }
-} else {
-    // Si aucune ID n'est passée ou si la méthode n'est pas POST, rediriger
-    header('Location: /views/authors.php');
-    exit();
 }
+

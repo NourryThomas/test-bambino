@@ -1,5 +1,4 @@
 <?php
-// Démarrer la session si elle n'est pas déjà démarrée
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -8,13 +7,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = $_POST['email'];
     $password = $_POST['password'];
 
-    // Préparation des données à envoyer à l'API
     $data = [
         'email' => $email,
         'password' => $password
     ];
 
-    $apiUrl = 'https://candidate-testing.com/api/v2/token'; 
+    $apiUrl = 'https://candidate-testing.com/api/v2/token';
 
     $ch = curl_init($apiUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -27,8 +25,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     curl_close($ch);
 
     if ($response === false) {
-        // Afficher l'erreur cURL
-        $error = 'Erreur de connexion à l\'API : ' . curl_error($ch);
+        $error = 'API connection error: ' . curl_error($ch);
         header('Location: /views/login.php?error=' . urlencode($error));
         exit();
     }
@@ -36,20 +33,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $responseData = json_decode($response, true);
 
     if ($httpCode === 200 && isset($responseData['token_key'])) {
-        // Connexion réussie, stocker le token dans la session
-        session_regenerate_id(true); // Sécurise la session en générant un nouvel ID de session
+        session_regenerate_id(true); // Secure the session
+
+        // Store the token, first name, and last name of the user
         $_SESSION['token'] = $responseData['token_key'];
-        header('Location: /views/dashboard.php'); // Redirection vers le tableau de bord
+        $_SESSION["user"]['first_name'] = $responseData["user"]['first_name']; 
+        $_SESSION["user"]['last_name'] = $responseData["user"]['last_name'];
+
+        header('Location: /views/dashboard.php');
         exit();
-    } elseif ($httpCode === 403) {
-        // Identifiants incorrects
-        $error = "Identifiants incorrects. Veuillez réessayer.";
+    } elseif ($httpCode === 401) {
+        $error = "Incorrect credentials. Please try again.";
     } else {
-        // Gestion d'autres erreurs
-        $error = "Erreur de connexion. Code HTTP : " . $httpCode;
+        $error = "Connection error. HTTP Code: " . $httpCode;
     }
 
-    // Redirection vers la page de connexion avec un message d'erreur
     header('Location: /views/login.php?error=' . urlencode($error));
     exit();
 }

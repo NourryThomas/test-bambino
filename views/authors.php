@@ -1,12 +1,15 @@
 <?php
-session_start();
+// Check if the session has not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 if (!isset($_SESSION['token'])) {
     header('Location: /views/login.php');
     exit();
 }
 
-// Appel à l'API pour récupérer la liste des auteurs
+// Call the API to retrieve the list of authors
 $apiUrl = 'https://candidate-testing.com/api/v2/authors';
 $ch = curl_init($apiUrl);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -20,26 +23,23 @@ $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
 if ($httpCode !== 200) {
-    die('Erreur lors de la récupération des auteurs. Code HTTP : ' . $httpCode);
+    die('Error fetching authors. HTTP Code: ' . $httpCode);
 }
 
-// Décoder la réponse JSON
+// Decode the JSON response
 $authorsData = json_decode($response, true);
 
-// Récupérer la liste des auteurs (dans la clé 'items')
+// Retrieve the list of authors (inside the 'items' key)
 $authors = $authorsData['items'];
 
-// Gérer les messages d'erreur ou de succès
-$successMessage = isset($_GET['success']) ? htmlspecialchars($_GET['success']) : '';
-$errorMessage = isset($_GET['error']) ? htmlspecialchars($_GET['error']) : '';
 ?>
 
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Liste des Auteurs</title>
+    <title>List of Authors</title>
     <!-- Bootstrap CSS CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons CDN -->
@@ -47,29 +47,17 @@ $errorMessage = isset($_GET['error']) ? htmlspecialchars($_GET['error']) : '';
 </head>
 <body>
 <div class="container mt-5">
-    <h1 class="mb-4">Liste des Auteurs</h1>
-
-    <!-- Afficher les messages d'erreur ou de succès -->
-    <?php if ($successMessage): ?>
-        <div class="alert alert-success">
-            <?php echo $successMessage; ?>
-        </div>
-    <?php endif; ?>
-    <?php if ($errorMessage): ?>
-        <div class="alert alert-danger">
-            <?php echo $errorMessage; ?>
-        </div>
-    <?php endif; ?>
+    <h1 class="mb-4">List of Authors</h1>
 
     <table class="table table-striped table-hover">
         <thead class="table-dark">
         <tr>
             <th>ID</th>
-            <th>Prénom</th>
-            <th>Nom</th>
-            <th>Date de naissance</th>
-            <th>Lieu de naissance</th>
-            <th>Genre</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Date of Birth</th>
+            <th>Place of Birth</th>
+            <th>Gender</th>
             <th>Actions</th>
         </tr>
         </thead>
@@ -83,16 +71,16 @@ $errorMessage = isset($_GET['error']) ? htmlspecialchars($_GET['error']) : '';
                 <td><?php echo htmlspecialchars($author['place_of_birth']); ?></td>
                 <td><?php echo htmlspecialchars($author['gender']); ?></td>
                 <td>
-                    <!-- Bouton pour voir les détails de l'auteur -->
-                    <a href="/views/view_author.php?id=<?php echo $author['id']; ?>" class="btn btn-info btn-sm">
-                        <i class="bi bi-eye"></i> Voir
+                    <!-- Button to view author details -->
+                    <a href="?page=view_author&id=<?php echo $author['id']; ?>" class="btn btn-info btn-sm">
+                        <i class="bi bi-eye"></i> View
                     </a>
 
-                    <!-- Formulaire pour supprimer un auteur -->
-                    <form action="/src/delete_author.php" method="POST" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet auteur ?');">
+                    <!-- Form to delete an author -->
+                    <form action="?page=delete_author" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this author?');">
                         <input type="hidden" name="author_id" value="<?php echo $author['id']; ?>">
                         <button type="submit" class="btn btn-danger btn-sm">
-                            <i class="bi bi-trash"></i> Supprimer
+                            <i class="bi bi-trash"></i> Delete
                         </button>
                     </form>
                 </td>
