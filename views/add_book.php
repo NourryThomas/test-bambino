@@ -1,42 +1,48 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+// Load configurations, API functions, and helpers
+require_once '../src/config.php';
+require_once '../src/api.php';
+require_once '../src/helpers.php';
 
 // Check if the user is authenticated
-if (!isset($_SESSION['token'])) {
-    header('Location: /index.php');
-    exit();
-}
-
-// Function to fetch the list of authors
-function fetchAuthors($token) {
-    $apiUrl = 'https://candidate-testing.com/api/v2/authors';
-    $ch = curl_init($apiUrl);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Authorization: Bearer ' . $token,
-        'Content-Type: application/json'
-    ]);
-
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($httpCode !== 200) {
-        die('Error fetching authors. HTTP Code: ' . $httpCode);
-    }
-
-    return json_decode($response, true);
-}
-
-// Retrieve the list of authors
-$authors = fetchAuthors($_SESSION['token']);
-$authorsList = $authors['items'];
+isAuthenticated(); // Use the helper function
 
 // Manage success or error messages
-$successMessage = isset($_GET['success']) ? htmlspecialchars($_GET['success']) : '';
-$errorMessage = isset($_GET['error']) ? htmlspecialchars($_GET['error']) : '';
+$successMessage = '';
+$errorMessage = '';
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $bookData = [
+        'author' => ['id' => $_POST['author_id']],
+        'title' => $_POST['title'],
+        'release_date' => $_POST['release_date'],
+        'description' => $_POST['description'],
+        'isbn' => $_POST['isbn'],
+        'format' => $_POST['format'],
+        'number_of_pages' => (int)$_POST['number_of_pages']
+    ];
+
+    // Call the addBook function from api.php
+    $addBookResponse = addBook($bookData);
+
+    if ($addBookResponse['success']) {
+        $successMessage = "Book added successfully.";
+    } else {
+        $errorMessage = "Error adding the book: " . $addBookResponse['error'];
+    }
+}
+
+// Fetch the list of authors using the existing API function
+$authorsResponse = fetchAuthorsList(); // Use the function from api.php
+
+if (!$authorsResponse['success']) {
+    // If fetching authors fails, set an error message
+    $errorMessage = $authorsResponse['error'];
+    $authorsList = [];
+} else {
+    $authorsList = $authorsResponse['data'];
+}
 ?>
 
 <div class="container mt-5">
@@ -52,7 +58,7 @@ $errorMessage = isset($_GET['error']) ? htmlspecialchars($_GET['error']) : '';
     <?php endif; ?>
 
     <!-- Form to add a book -->
-    <form action="/src/add_book_handler.php" method="POST">
+    <form action="" method="POST">
         <div class="mb-3">
             <label for="title" class="form-label">Book Title:</label>
             <input type="text" id="title" name="title" class="form-control" required placeholder="Enter the book title">
@@ -87,11 +93,15 @@ $errorMessage = isset($_GET['error']) ? htmlspecialchars($_GET['error']) : '';
             <label for="author" class="form-label">Author:</label>
             <select id="author" name="author_id" class="form-select" required>
                 <option value="">Select an author</option>
-                <?php foreach ($authorsList as $author): ?>
-                    <option value="<?php echo htmlspecialchars($author['id']); ?>">
-                        <?php echo htmlspecialchars($author['first_name']) . ' ' . htmlspecialchars($author['last_name']); ?>
-                    </option>
-                <?php endforeach; ?>
+                <?php if (!empty($authorsList)): ?>
+                    <?php foreach ($authorsList as $author): ?>
+                        <option value="<?php echo htmlspecialchars($author['id']); ?>">
+                            <?php echo htmlspecialchars($author['first_name']) . ' ' . htmlspecialchars($author['last_name']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <option value="">No authors available</option>
+                <?php endif; ?>
             </select>
         </div>
 
